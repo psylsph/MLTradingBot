@@ -1,12 +1,12 @@
 from lumibot.brokers import Alpaca
-from lumibot.backtesting import YahooDataBacktesting
+from lumibot.backtesting import BacktestingBroker, YahooDataBacktesting
 from lumibot.strategies.strategy import Strategy
 from lumibot.traders import Trader
+from lumibot.entities import Asset
 from datetime import datetime 
 from alpaca_trade_api import REST 
 from timedelta import Timedelta 
 from finbert_utils import estimate_sentiment
-from finvizfinance.quote import finvizfinance
 import os
 from dotenv import load_dotenv
 import pandas as pd
@@ -16,8 +16,9 @@ load_dotenv()
 API_KEY = os.getenv("API_KEY")
 API_SECRET = os.getenv("API_SECRET")
 BASE_URL = "https://paper-api.alpaca.markets"
-SYMBOL = "BAESY" # BAE Systems
-#SYMBOL = "BTC/USD" # Bitcoin
+#SYMBOL = "BAESY" # BAE Systems
+#SYMBOL = "SPY" # S&P 500
+SYMBOL = "AAPL" # Apple
 
 ALPACA_CREDS = {
     "API_KEY":API_KEY, 
@@ -92,11 +93,12 @@ broker = Alpaca(ALPACA_CREDS)
 strategy = MLTrader(name='mlstrat', broker=broker, 
                     parameters={"symbol":SYMBOL, 
                                 "cash_at_risk":.5})
+
 strategy.backtest(
     YahooDataBacktesting, 
     start_date, 
     end_date, 
-    parameters={"symbol":SYMBOL, "cash_at_risk":.5}
+    show_tearsheet = True
 )
 # trader = Trader()
 # trader.add_strategy(strategy)
