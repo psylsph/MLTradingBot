@@ -16,6 +16,8 @@ load_dotenv()
 API_KEY = os.getenv("API_KEY")
 API_SECRET = os.getenv("API_SECRET")
 BASE_URL = "https://paper-api.alpaca.markets"
+SYMBOL = "BAESY" # BAE Systems
+#SYMBOL = "BTC/USD" # Bitcoin
 
 ALPACA_CREDS = {
     "API_KEY":API_KEY, 
@@ -24,7 +26,7 @@ ALPACA_CREDS = {
 }
 
 class MLTrader(Strategy): 
-    def initialize(self, symbol:str="BA.L", cash_at_risk:float=.5): 
+    def initialize(self, symbol:str=SYMBOL, cash_at_risk:float=.5): 
         self.symbol = symbol
         self.sleeptime = "24H" 
         self.last_trade = None 
@@ -43,30 +45,13 @@ class MLTrader(Strategy):
         return today.strftime('%Y-%m-%d'), three_days_prior.strftime('%Y-%m-%d')
 
     def get_sentiment(self): 
-        # today, three_days_prior = self.get_dates()
-        # news = self.api.get_news(symbol=self.symbol, 
-        #                          start=three_days_prior, 
-        #                          end=today) 
-        # news = [ev.__dict__["_raw"]["headline"] for ev in news]
+        today, three_days_prior = self.get_dates()
+        news = self.api.get_news(symbol=self.symbol, 
+                                  start=three_days_prior, 
+                                  end=today) 
+        news = [ev.__dict__["_raw"]["headline"] for ev in news]
 
-        # Data Pull
-        stock = finvizfinance(self.symbol) 
-        news_df = stock.ticker_news()
-
-        # Preprocess before putting into LLM
-        news_df['Title'] = news_df['Title'].str.lower()
-
-        # Classify Sentiment function applied to each row of news_df
-        #news_df['sentiment'] = news_df['Title'].apply(classify_sentiment)
-
-        # Postprocess after putting into LLM
-        #news_df['sentiment'] = news_df['sentiment'].str.upper()
-        #news_df = news_df[news_df['sentiment'] != 'NEUTRAL']
-        news_df['Date'] = pd.to_datetime(news_df.loc[:, 'Date'])
-        news_df['DateOnly'] = news_df.loc[:, 'Date'].dt.date
-
-        probability, sentiment = estimate_sentiment(news_df)
-        #probability, sentiment = estimate_sentiment(news)
+        probability, sentiment = estimate_sentiment(news)
         return probability, sentiment 
 
     def on_trading_iteration(self):
@@ -105,13 +90,13 @@ start_date = datetime(2023,1,1)
 end_date = datetime(2023,12,31) 
 broker = Alpaca(ALPACA_CREDS) 
 strategy = MLTrader(name='mlstrat', broker=broker, 
-                    parameters={"symbol":"SPY", 
+                    parameters={"symbol":SYMBOL, 
                                 "cash_at_risk":.5})
 strategy.backtest(
     YahooDataBacktesting, 
     start_date, 
     end_date, 
-    parameters={"symbol":"SPY", "cash_at_risk":.5}
+    parameters={"symbol":SYMBOL, "cash_at_risk":.5}
 )
 # trader = Trader()
 # trader.add_strategy(strategy)
